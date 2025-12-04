@@ -28,6 +28,7 @@ function App() {
 
   // UI States
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -116,11 +117,47 @@ function App() {
       });
       const data = await res.json();
       if (data.balance) {
-        setUser({ ...user, walletBalance: data.balance });
+        setUser({ ...user, walletBalance: data.balance, history: data.history });
         showToast(`Deposited $${amount} Successfully`);
       }
     } catch (e) {
       showToast("Deposit failed", "error");
+    }
+  };
+
+  const handleWithdraw = async (amount) => {
+    if (amount <= 0) {
+      showToast("Invalid amount", "error");
+      return;
+    }
+    if (user.walletBalance < amount) {
+      showToast("Insufficient Funds", "error");
+      return;
+    }
+
+    if (!user || user._id === "guest") {
+      if (user._id === "guest") {
+        setUser({ ...user, walletBalance: user.walletBalance - amount });
+        showToast(`Withdrew $${amount}`);
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/transaction`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user._id, amount, type: "WITHDRAW" }),
+      });
+      const data = await res.json();
+      if (data.balance !== undefined) {
+        setUser({ ...user, walletBalance: data.balance, history: data.history });
+        showToast(`Withdrew $${amount} Successfully`);
+      } else {
+        showToast(data.message || "Withdrawal failed", "error");
+      }
+    } catch (e) {
+      showToast("Withdrawal failed", "error");
     }
   };
 
@@ -265,7 +302,10 @@ function App() {
               <p className="font-mono text-xl font-bold text-gray-900 dark:text-white">${user?.walletBalance?.toLocaleString()}</p>
             </div>
 
-            <button onClick={() => setIsDepositModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">+ Add</button>
+            <div className="flex gap-2">
+              <button onClick={() => setIsWithdrawModalOpen(true)} className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">Withdraw</button>
+              <button onClick={() => setIsDepositModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all">+ Add</button>
+            </div>
 
             <div className="relative">
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -459,8 +499,8 @@ function App() {
                       <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">{new Date(txn.date).toLocaleDateString()}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${txn.type === 'DEPOSIT' ? 'bg-green-100 text-green-700' :
-                            txn.type === 'WITHDRAW' ? 'bg-red-100 text-red-700' :
-                              txn.type === 'BUY' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                          txn.type === 'WITHDRAW' ? 'bg-red-100 text-red-700' :
+                            txn.type === 'BUY' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
                           }`}>
                           {txn.type}
                         </span>
@@ -485,7 +525,25 @@ function App() {
         )}
 
         {/* MODALS */}
-        <EscrowModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} onComplete={handleDeposit} />
+        <EscrowModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} onComplete={handleDeposit} title="Deposit Funds" />
+
+        {isWithdrawModalOpen && (
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-sm border border-gray-200 dark:border-gray-700 shadow-2xl animate-fade-in">
+              <h3 className="text-xl font-bold dark:text-white mb-4">Withdraw Funds</h3>
+              <p className="text-sm text-gray-500 mb-4">Funds will be transferred to your linked bank account.</p>
+              <form onSubmit={(e) => { e.preventDefault(); handleWithdraw(e.target.amount.value); setIsWithdrawModalOpen(false); }}>
+                <input name="amount" type="number" min="1" autoFocus className="w-full bg-gray-100 dark:bg-gray-900 border dark:border-gray-600 p-3 rounded mb-4 dark:text-white focus:ring-2 ring-blue-500 outline-none" required placeholder="Amount" />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsWithdrawModalOpen(false)} className="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2 rounded font-medium">Cancel</button>
+                  <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold">Withdraw</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+
         <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
 
         {tradeModal && (
