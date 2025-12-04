@@ -2,10 +2,13 @@ import { useState } from "react";
 
 function Login({ onLogin, onBack }) {
     const [isRegistering, setIsRegistering] = useState(false);
-    const [name, setName] = useState(""); // NEW: Name state
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+
+    // Define API URL: Uses the Vercel/Env variable if available, otherwise localhost
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -18,7 +21,8 @@ function Login({ onLogin, onBack }) {
             : { email, password };
 
         try {
-            const response = await fetch(`http://localhost:3001${endpoint}`, {
+            // UPDATED: Using dynamic API_URL
+            const response = await fetch(`${API_URL}${endpoint}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -30,6 +34,7 @@ function Login({ onLogin, onBack }) {
                 setError(data.message || "Something went wrong");
             }
         } catch (err) {
+            console.error(err);
             setError("Server error. Is the backend running?");
         }
     };
@@ -43,7 +48,8 @@ function Login({ onLogin, onBack }) {
         };
 
         try {
-            const response = await fetch("http://localhost:3001/api/auth/google", {
+            // UPDATED: Using dynamic API_URL
+            const response = await fetch(`${API_URL}/api/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(mockGoogleUser),
@@ -53,6 +59,7 @@ function Login({ onLogin, onBack }) {
                 onLogin(data.user);
             }
         } catch (err) {
+            console.error(err);
             setError("Google Login Failed");
         }
     };
