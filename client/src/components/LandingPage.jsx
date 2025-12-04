@@ -9,7 +9,7 @@ const Logo = () => (
     </svg>
 );
 
-function LandingPage({ onEnter }) {
+function LandingPage({ onEnter, darkMode, toggleTheme }) {
     const [showAbout, setShowAbout] = useState(false);
 
     return (
@@ -33,7 +33,10 @@ function LandingPage({ onEnter }) {
                             <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">by Escrow Stack</p>
                         </div>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 items-center">
+                        <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-300 hover:scale-110 transition-transform">
+                            {darkMode ? "☀️" : "🌙"}
+                        </button>
                         <button onClick={onEnter} className="text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-blue-500">Log In</button>
                         <button onClick={onEnter} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-bold text-sm transition-all shadow-lg shadow-blue-500/30">
                             Launch Terminal
@@ -113,7 +116,7 @@ function LandingPage({ onEnter }) {
                         </button>
 
                         {/* LEFT COLUMN: Profile Card */}
-                        <div className="md:w-1/3 bg-gray-50 dark:bg-gray-900/50 p-8 text-center border-r border-gray-200 dark:border-gray-700 sticky top-0">
+                        <div className="md:w-1/3 bg-gray-50 dark:bg-gray-900/50 p-8 text-center border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 md:sticky md:top-0">
                             <div className="w-32 h-32 mx-auto mb-4 rounded-full p-1 bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg relative group">
                                 <img
                                     src="/profile.jpg"

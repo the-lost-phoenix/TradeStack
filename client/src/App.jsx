@@ -226,7 +226,7 @@ function App() {
   }, [availableStocks, searchQuery, selectedCategory]);
 
 
-  if (showLanding) return <LandingPage onEnter={() => setShowLanding(false)} onGuestLogin={handleGuestLogin} />;
+  if (showLanding) return <LandingPage onEnter={() => setShowLanding(false)} onGuestLogin={handleGuestLogin} darkMode={darkMode} toggleTheme={toggleTheme} />;
   if (!user) return <Login onLogin={(u) => { setUser(u); showToast("Welcome back!"); }} onBack={() => setShowLanding(true)} />;
 
   return (
@@ -419,7 +419,7 @@ function App() {
                   </div>
 
                   <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex gap-2">
-                    <button onClick={() => setTradeModal({ code: stock.code, type: 'BUY' })} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-500">Buy</button>
+
                     <button
                       onClick={() => toggleSubscription(stock.code)}
                       className={`px-4 py-2 rounded-lg font-bold text-sm border transition-colors ${isWatched ? 'border-amber-500 text-amber-500 bg-amber-50 dark:bg-amber-900/10' : 'border-gray-300 text-gray-500 hover:text-gray-900 dark:border-gray-600 dark:text-gray-400'}`}
