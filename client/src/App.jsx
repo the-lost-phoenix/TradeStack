@@ -252,6 +252,26 @@ function App() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/user/${user._id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setUser(null);
+        setIsProfileOpen(false);
+        setShowLanding(true);
+        showToast("Account deleted successfully");
+      } else {
+        showToast("Failed to delete account", "error");
+      }
+    } catch (e) {
+      showToast("Error deleting account", "error");
+    }
+  };
+
   // --- DERIVED STATE ---
   const categories = useMemo(() => ["All", ...Array.from(new Set(availableStocks.map(s => s.category || "General")))], [availableStocks]);
 
@@ -546,7 +566,7 @@ function App() {
         )}
 
 
-        <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+        <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} onDelete={handleDeleteAccount} />
 
         {tradeModal && (
           <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">

@@ -1,6 +1,6 @@
 import React from 'react';
 
-function ProfileModal({ user, isOpen, onClose }) {
+function ProfileModal({ user, isOpen, onClose, onDelete }) {
     if (!isOpen || !user) return null;
 
     return (
@@ -44,13 +44,19 @@ function ProfileModal({ user, isOpen, onClose }) {
                             </div>
                             <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
                                 <p className="text-[10px] uppercase font-bold text-gray-500">Total Trades</p>
-                                <p className="font-bold text-gray-900 dark:text-white">{(user.portfolio?.length || 0) * 12} <span className="text-[10px] font-normal text-gray-400">(Simulated)</span></p>
+                                <p className="font-bold text-gray-900 dark:text-white">
+                                    {user.history?.filter(t => t.type === 'BUY' || t.type === 'SELL').length || 0}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <button onClick={onClose} className="w-full mt-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform">
                         Close Profile
+                    </button>
+
+                    <button onClick={onDelete} className="w-full mt-3 text-red-500 hover:text-red-600 font-bold text-sm py-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors">
+                        Delete Account
                     </button>
                 </div>
             </div>
