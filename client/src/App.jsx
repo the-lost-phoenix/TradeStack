@@ -97,7 +97,8 @@ function App() {
     showToast("Welcome, Guest Trader!");
   };
 
-  const handleDeposit = async (amount) => {
+  const handleDeposit = async (amountInput) => {
+    const amount = parseFloat(amountInput);
     if (amount < 1000) {
       showToast("Minimum deposit is $1000", "error");
       return;
@@ -116,7 +117,7 @@ function App() {
         body: JSON.stringify({ userId: user._id, amount, type: "DEPOSIT" }),
       });
       const data = await res.json();
-      if (data.balance) {
+      if (data.balance !== undefined) {
         setUser({ ...user, walletBalance: data.balance, history: data.history });
         showToast(`Deposited $${amount} Successfully`);
       }
@@ -125,7 +126,8 @@ function App() {
     }
   };
 
-  const handleWithdraw = async (amount) => {
+  const handleWithdraw = async (amountInput) => {
+    const amount = parseFloat(amountInput);
     if (amount <= 0) {
       showToast("Invalid amount", "error");
       return;
