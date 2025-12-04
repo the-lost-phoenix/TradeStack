@@ -15,7 +15,15 @@ const userSchema = new mongoose.Schema({
     subscribedStocks: {
         type: [String],
         default: ["GOOG", "TSLA", "AMZN", "META", "NVDA"]
-    }
+    },
+    history: [{
+        type: { type: String }, // BUY, SELL, DEPOSIT
+        stockCode: String,
+        quantity: Number,
+        price: Number,
+        amount: Number,
+        date: { type: Date, default: Date.now }
+    }]
 });
 
 const User = mongoose.model("User", userSchema);

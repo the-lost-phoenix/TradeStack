@@ -97,6 +97,10 @@ function App() {
   };
 
   const handleDeposit = async (amount) => {
+    if (amount < 1000) {
+      showToast("Minimum deposit is $1000", "error");
+      return;
+    }
     if (!user || user._id === "guest") {
       if (user._id === "guest") {
         setUser({ ...user, walletBalance: user.walletBalance + amount });
@@ -295,6 +299,7 @@ function App() {
           <div className="flex bg-white dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
             <button onClick={() => setActiveTab("dashboard")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "dashboard" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Dashboard</button>
             <button onClick={() => setActiveTab("market")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "market" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Marketplace</button>
+            <button onClick={() => setActiveTab("history")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "history" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>History</button>
           </div>
 
           {activeTab === "market" && (
@@ -430,6 +435,52 @@ function App() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* HISTORY VIEW */}
+        {activeTab === "history" && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 uppercase font-bold text-xs">
+                  <tr>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Stock</th>
+                    <th className="px-6 py-4">Quantity</th>
+                    <th className="px-6 py-4">Price</th>
+                    <th className="px-6 py-4 text-right">Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {user?.history?.slice().reverse().map((txn, i) => (
+                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">{new Date(txn.date).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${txn.type === 'DEPOSIT' ? 'bg-green-100 text-green-700' :
+                            txn.type === 'WITHDRAW' ? 'bg-red-100 text-red-700' :
+                              txn.type === 'BUY' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                          {txn.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-bold">{txn.stockCode || '-'}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{txn.quantity || '-'}</td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-mono">{txn.price ? `$${txn.price.toFixed(2)}` : '-'}</td>
+                      <td className={`px-6 py-4 text-right font-mono font-bold ${txn.type === 'DEPOSIT' || txn.type === 'SELL' ? 'text-green-600' : 'text-red-600'}`}>
+                        {txn.type === 'DEPOSIT' || txn.type === 'SELL' ? '+' : '-'}${txn.amount?.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                  {(!user?.history || user.history.length === 0) && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-gray-500 italic">No transaction history found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

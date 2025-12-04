@@ -132,14 +132,17 @@ app.post("/api/transaction", async (req, res) => {
         const cleanAmount = Number(amount);
 
         if (type === 'DEPOSIT') {
+            if (cleanAmount < 1000) return res.status(400).json({ message: "Minimum deposit is $1000" });
             user.walletBalance += cleanAmount;
+            user.history.push({ type: 'DEPOSIT', amount: cleanAmount });
         } else {
             if (user.walletBalance < cleanAmount) return res.status(400).json({ message: "Insufficient Funds" });
             user.walletBalance -= cleanAmount;
+            user.history.push({ type: 'WITHDRAW', amount: cleanAmount });
         }
 
         await user.save();
-        res.json({ message: "Transaction Successful", balance: user.walletBalance });
+        res.json({ message: "Transaction Successful", balance: user.walletBalance, history: user.history });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -163,6 +166,8 @@ app.post("/api/trade", async (req, res) => {
             const existingStock = user.portfolio.find(p => p.stockCode === stockCode);
             if (existingStock) existingStock.quantity += quantity;
             else user.portfolio.push({ stockCode, quantity, averageBuyPrice: realPrice });
+
+            user.history.push({ type: 'BUY', stockCode, quantity, price: realPrice, amount: cost });
         }
         else if (type === 'SELL') {
             const existingStock = user.portfolio.find(p => p.stockCode === stockCode);
@@ -170,6 +175,8 @@ app.post("/api/trade", async (req, res) => {
             user.walletBalance += cost;
             existingStock.quantity -= quantity;
             if (existingStock.quantity === 0) user.portfolio = user.portfolio.filter(p => p.stockCode !== stockCode);
+
+            user.history.push({ type: 'SELL', stockCode, quantity, price: realPrice, amount: cost });
         }
 
         await user.save();
