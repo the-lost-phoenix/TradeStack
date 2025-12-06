@@ -97,26 +97,47 @@ app.post("/api/login", async (req, res) => {
 });
 
 // 2.5 GOOGLE LOGIN (Mock/Simulated Route)
-app.post("/api/auth/google", async (req, res) => {
-    const { email, name, photoUrl } = req.body;
-
+// 2.5 CLERK USER SYNC
+app.post("/api/auth/sync", async (req, res) => {
     try {
-        let user = await User.findOne({ email });
+        const { clerkId, email, name, avatar, createIfMissing } = req.body;
 
+        // Try to find by Clerk ID first
+        let user = await User.findOne({ clerkId });
+
+        // If not found, try by Email (Migration from old email login to Clerk)
         if (!user) {
-            // Create new Google User
-            user = new User({
-                name,
-                email,
-                avatar: photoUrl,
-                virtualIban: generateIBAN(),
-                subscribedStocks: ["GOOG", "TSLA", "AMZN", "META", "NVDA"]
-            });
-            await user.save();
+            user = await User.findOne({ email });
+            // If found by email, link the Clerk ID to this existing user
+            if (user) {
+                user.clerkId = clerkId;
+                if (avatar) user.avatar = avatar; // Update avatar if available
+                await user.save();
+            }
         }
 
-        res.json({ message: "Google Login Success", user });
+        // If still not found...
+        if (!user) {
+            if (createIfMissing) {
+                // EXPLICIT CREATION
+                user = new User({
+                    clerkId,
+                    name: name || "Trader",
+                    email,
+                    avatar,
+                    virtualIban: generateIBAN(),
+                    subscribedStocks: ["GOOG", "TSLA", "AMZN", "META", "NVDA"]
+                });
+                await user.save();
+            } else {
+                // DO NOT CREATE
+                return res.status(404).json({ error: "User not found" });
+            }
+        }
+
+        res.json({ message: "Sync Success", user });
     } catch (err) {
+        console.error("Sync Error:", err);
         res.status(500).json({ error: err.message });
     }
 });

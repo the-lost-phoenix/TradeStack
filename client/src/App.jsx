@@ -1,29 +1,36 @@
 import { useEffect, useState, useMemo } from "react";
 import io from "socket.io-client";
+import { useUser, useClerk, SignedIn, SignedOut } from "@clerk/clerk-react"; // CLERK IMPORTS
+
 import Login from "./components/Login";
 import LandingPage from "./components/LandingPage";
 import EscrowModal from "./components/EscrowModal";
 import StockChart from "./components/StockChart";
 import ProfileModal from "./components/ProfileModal";
+import StockDetailsModal from "./components/StockDetailsModal";
 
 // Helper Component for Notifications (Inline for simplicity)
 const Toast = ({ message, type, onClose }) => {
   if (!message) return null;
   const bgClass = type === 'error' ? 'bg-red-500' : 'bg-green-500';
   return (
-    <div className={`fixed top-4 right-4 z-50 ${bgClass} text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-bounce-in`}>
+    <div className={`fixed top-4 right-4 z-[100] ${bgClass} text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-bounce-in`}>
       <span>{message}</span>
       <button onClick={onClose} className="ml-2 font-bold hover:text-gray-200">×</button>
     </div>
   );
 };
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API_URL } from "./config";
 const socket = io.connect(API_URL);
 
 function App() {
+  // CLERK HOOKS
+  const { user: clerkUser, isLoaded: isClerkLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
+
   const [user, setUser] = useState(null);
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(!isSignedIn);
   const [darkMode, setDarkMode] = useState(true);
 
   // UI States
@@ -44,6 +51,57 @@ function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [tradeModal, setTradeModal] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedStock, setSelectedStock] = useState(null);
+
+  // --- CLERK USER SYNC ---
+  const [syncError, setSyncError] = useState(false);
+  const [requiresSignup, setRequiresSignup] = useState(false);
+
+  const syncUser = async (retryWithCreate = false) => {
+    if (isSignedIn && clerkUser) {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clerkId: clerkUser.id,
+            email: clerkUser.primaryEmailAddress?.emailAddress,
+            name: clerkUser.fullName,
+            avatar: clerkUser.imageUrl,
+            createIfMissing: retryWithCreate // Control flag
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data.user);
+          setShowLanding(false);
+          setSyncError(false);
+          setRequiresSignup(false);
+        } else if (res.status === 404) {
+          // User doesn't exist yet -> show signup prompt
+          setRequiresSignup(true);
+          setShowLanding(false); // Hide landing to show signup prompt
+        } else {
+          console.error("Sync API Error:", data);
+          setSyncError(true);
+        }
+      } catch (error) {
+        console.error("Sync Network Error:", error);
+        setSyncError(true);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isClerkLoaded && isSignedIn) {
+      syncUser(false); // Default: Try to find, do not create
+    }
+  }, [isClerkLoaded, isSignedIn, clerkUser]);
+
+  const handleCreateAccount = () => {
+    syncUser(true);
+  };
+
 
   // --- THEME TOGGLE ---
   useEffect(() => {
@@ -166,36 +224,45 @@ function App() {
   const handleTrade = async (quantity) => {
     if (!tradeModal || !user) return;
 
+    // PRE-VALIDATION (Check locally first)
+    const price = getPrice(tradeModal.code);
+    const cost = price * quantity;
+
+    if (tradeModal.type === 'BUY') {
+      if (user.walletBalance < cost) {
+        alert(`Insufficient Funds!\n\nCost: $${cost.toFixed(2)}\nBalance: $${user.walletBalance.toFixed(2)}`);
+        return;
+      }
+    } else if (tradeModal.type === 'SELL') {
+      const existing = user.portfolio?.find(p => p.stockCode === tradeModal.code);
+      if (!existing || existing.quantity < quantity) {
+        alert(`Not enough shares to sell!\n\nOwned: ${existing ? existing.quantity : 0}\nSelling: ${quantity}`);
+        return;
+      }
+    }
+
+    // CONFIRM
+    if (!confirm(`Are you sure you want to ${tradeModal.type} ${quantity} shares of ${tradeModal.code}?`)) return;
+
     // GUEST LOGIC
     if (user._id === "guest") {
-      const price = getPrice(tradeModal.code);
-      const cost = price * quantity;
-
       if (tradeModal.type === 'BUY') {
-        if (user.walletBalance < cost) {
-          showToast("Insufficient Funds", "error");
-          return;
-        }
         const newPortfolio = [...user.portfolio];
         const existing = newPortfolio.find(p => p.stockCode === tradeModal.code);
         if (existing) existing.quantity = parseInt(existing.quantity) + parseInt(quantity);
         else newPortfolio.push({ stockCode: tradeModal.code, quantity: parseInt(quantity), averageBuyPrice: price });
 
         setUser({ ...user, walletBalance: user.walletBalance - cost, portfolio: newPortfolio });
-        showToast(`Bought ${quantity} ${tradeModal.code}`);
+        alert(`Successfully Bought ${quantity} ${tradeModal.code}!`);
       } else if (tradeModal.type === 'SELL') {
-        // Simple Guest Sell Logic
-        const newPortfolio = [...user.portfolio];
+        const newPortfolio = [...(user.portfolio || [])];
         const existingIndex = newPortfolio.findIndex(p => p.stockCode === tradeModal.code);
-        if (existingIndex === -1 || newPortfolio[existingIndex].quantity < quantity) {
-          showToast("Not enough shares", "error");
-          return;
+        if (existingIndex !== -1) {
+          newPortfolio[existingIndex].quantity -= quantity;
+          if (newPortfolio[existingIndex].quantity <= 0) newPortfolio.splice(existingIndex, 1);
+          setUser({ ...user, walletBalance: user.walletBalance + cost, portfolio: newPortfolio });
+          alert(`Successfully Sold ${quantity} ${tradeModal.code}!`);
         }
-        newPortfolio[existingIndex].quantity -= quantity;
-        if (newPortfolio[existingIndex].quantity <= 0) newPortfolio.splice(existingIndex, 1);
-
-        setUser({ ...user, walletBalance: user.walletBalance + cost, portfolio: newPortfolio });
-        showToast(`Sold ${quantity} ${tradeModal.code}`);
       }
       setTradeModal(null);
       return;
@@ -215,12 +282,12 @@ function App() {
         if (tradeModal.type === 'BUY' && !user.subscribedStocks.includes(tradeModal.code)) {
           toggleSubscription(tradeModal.code, true); // Silent subscribe on buy
         }
-        showToast(`${tradeModal.type} Successful`);
+        alert(`Transaction Successful!\n${tradeModal.type} ${quantity} ${tradeModal.code}`);
       } else {
-        showToast(data.message, "error");
+        alert(data.message || "Trade Failed");
       }
     } catch (e) {
-      showToast("Trade failed", "error");
+      alert("Trade failed: Server Error");
     }
   };
 
@@ -253,6 +320,12 @@ function App() {
   };
 
   const handleDeleteAccount = async () => {
+    // Check for remaining balance
+    if (user.walletBalance > 0) {
+      alert(`Cannot Delete Account!\n\nYou still have $${user.walletBalance.toLocaleString()} in your wallet.\nPlease withdraw all funds before deleting your account.`);
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
 
     try {
@@ -260,15 +333,26 @@ function App() {
         method: "DELETE",
       });
       if (res.ok) {
-        setUser(null);
-        setIsProfileOpen(false);
-        setShowLanding(true);
         showToast("Account deleted successfully");
+        // Force logout from Clerk as well
+        handleLogout();
       } else {
         showToast("Failed to delete account", "error");
       }
     } catch (e) {
       showToast("Error deleting account", "error");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      setShowLanding(true);
+      setIsMenuOpen(false);
+      setIsProfileOpen(false);
+    } catch (err) {
+      console.error("Logout Error:", err);
     }
   };
 
@@ -288,6 +372,36 @@ function App() {
     });
   }, [availableStocks, searchQuery, selectedCategory]);
 
+
+  if (requiresSignup) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-white">
+        <div className="bg-gray-800 p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-gray-700">
+          <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
+            <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Account Not Found</h2>
+          <p className="text-gray-400 mb-6">
+            It looks like you don't have a TradeStack account linked to <b>{clerkUser?.primaryEmailAddress?.emailAddress}</b>.
+          </p>
+          <button
+            onClick={handleCreateAccount}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl mb-3 transition-colors"
+          >
+            Create New Account
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full bg-transparent border border-gray-600 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (showLanding) return <LandingPage onEnter={() => setShowLanding(false)} onGuestLogin={handleGuestLogin} darkMode={darkMode} toggleTheme={toggleTheme} />;
   if (!user) return <Login onLogin={(u) => { setUser(u); showToast("Welcome back!"); }} onBack={() => setShowLanding(true)} />;
@@ -347,7 +461,7 @@ function App() {
                   <button onClick={() => { setIsProfileOpen(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                     My Profile
                   </button>
-                  <button onClick={() => setUser(null)} className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold">
+                  <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold">
                     Logout
                   </button>
                 </div>
@@ -399,7 +513,9 @@ function App() {
                     const isProfit = stockData.price >= (history[0]?.price || stockData.price);
 
                     return (
-                      <div key={code} className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm relative overflow-hidden">
+                      <div key={code}
+                        onClick={() => setSelectedStock(stockData)}
+                        className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm relative overflow-hidden cursor-pointer transform hover:scale-[1.02] duration-200">
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <h3 className="text-xl font-bold dark:text-white">{code}</h3>
@@ -416,8 +532,8 @@ function App() {
                           <StockChart data={history} color={isProfit ? "#16a34a" : "#dc2626"} />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <button onClick={() => setTradeModal({ code, type: 'BUY' })} className="bg-green-100 text-green-700 py-2 rounded font-bold text-sm hover:bg-green-200">BUY</button>
-                          <button onClick={() => setTradeModal({ code, type: 'SELL' })} className="bg-red-100 text-red-700 py-2 rounded font-bold text-sm hover:bg-red-200">SELL</button>
+                          <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'BUY' }); }} className="bg-green-100 text-green-700 py-2 rounded font-bold text-sm hover:bg-green-200">BUY</button>
+                          <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'SELL' }); }} className="bg-red-100 text-red-700 py-2 rounded font-bold text-sm hover:bg-red-200">SELL</button>
                         </div>
                       </div>
                     );
@@ -442,13 +558,15 @@ function App() {
                     const isProfit = stockData.price >= (history[0]?.price || stockData.price);
 
                     return (
-                      <div key={code} className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm opacity-90 hover:opacity-100 transition-opacity">
+                      <div key={code}
+                        onClick={() => setSelectedStock(stockData)}
+                        className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm opacity-90 hover:opacity-100 transition-opacity cursor-pointer transform hover:scale-[1.02] duration-200 relative">
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <h3 className="text-lg font-bold dark:text-white">{code}</h3>
                             <p className="text-gray-500 text-xs">{stockData.name}</p>
                           </div>
-                          <button onClick={() => toggleSubscription(code)} className="text-gray-400 hover:text-red-500">
+                          <button onClick={(e) => { e.stopPropagation(); toggleSubscription(code); }} className="text-gray-400 hover:text-red-500 z-10 p-1">
                             ✕
                           </button>
                         </div>
@@ -458,7 +576,7 @@ function App() {
                         <div className="h-12 mb-4 opacity-50">
                           <StockChart data={history} color={isProfit ? "#16a34a" : "#dc2626"} />
                         </div>
-                        <button onClick={() => setTradeModal({ code, type: 'BUY' })} className="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-500">Start Investing</button>
+                        <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'BUY' }); }} className="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-500 z-10 relative">Start Investing</button>
                       </div>
                     );
                   })}
@@ -547,26 +665,13 @@ function App() {
         )}
 
         {/* MODALS */}
-        <EscrowModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} onComplete={handleDeposit} title="Deposit Funds" />
-
-        {isWithdrawModalOpen && (
-          <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-sm border border-gray-200 dark:border-gray-700 shadow-2xl animate-fade-in">
-              <h3 className="text-xl font-bold dark:text-white mb-4">Withdraw Funds</h3>
-              <p className="text-sm text-gray-500 mb-4">Funds will be transferred to your linked bank account.</p>
-              <form onSubmit={(e) => { e.preventDefault(); handleWithdraw(e.target.amount.value); setIsWithdrawModalOpen(false); }}>
-                <input name="amount" type="number" min="1" autoFocus className="w-full bg-gray-100 dark:bg-gray-900 border dark:border-gray-600 p-3 rounded mb-4 dark:text-white focus:ring-2 ring-blue-500 outline-none" required placeholder="Amount" />
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setIsWithdrawModalOpen(false)} className="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2 rounded font-medium">Cancel</button>
-                  <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold">Withdraw</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        <EscrowModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} onComplete={handleDeposit} mode="DEPOSIT" />
+        <EscrowModal isOpen={isWithdrawModalOpen} onClose={() => setIsWithdrawModalOpen(false)} onComplete={handleWithdraw} mode="WITHDRAW" />
 
 
         <ProfileModal user={user} isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} onDelete={handleDeleteAccount} />
+
+        <StockDetailsModal stock={selectedStock} isOpen={!!selectedStock} onClose={() => setSelectedStock(null)} />
 
         {tradeModal && (
           <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+    clerkId: { type: String, unique: true, sparse: true }, // Clerk User ID
     name: { type: String, default: "User" }, // NEW: Store Name
     email: { type: String, required: true, unique: true },
     password: { type: String }, // Not required for Google Login users
