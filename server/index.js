@@ -224,8 +224,17 @@ app.post("/api/subscribe", async (req, res) => {
 app.delete("/api/user/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedUser = await User.findByIdAndDelete(id);
-        if (!deletedUser) return res.status(404).json({ message: "User not found" });
+        const user = await User.findById(id);
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Check if user has stocks
+        const hasStocks = user.portfolio.some(p => p.quantity > 0);
+        if (hasStocks) {
+            return res.status(400).json({ message: "You must sell all your shares before deleting your account." });
+        }
+
+        await User.findByIdAndDelete(id);
         res.json({ message: "User deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });

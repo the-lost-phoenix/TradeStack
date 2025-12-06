@@ -8,6 +8,7 @@ import EscrowModal from "./components/EscrowModal";
 import StockChart from "./components/StockChart";
 import ProfileModal from "./components/ProfileModal";
 import StockDetailsModal from "./components/StockDetailsModal";
+import FAQ from "./components/FAQ";
 
 // Helper Component for Notifications (Inline for simplicity)
 const Toast = ({ message, type, onClose }) => {
@@ -326,6 +327,13 @@ function App() {
       return;
     }
 
+    // Check for remaining stocks
+    const hasStocks = user.portfolio.some(p => p.quantity > 0);
+    if (hasStocks) {
+      alert(`Cannot Delete Account!\n\nYou still own shares in your portfolio.\nPlease sell all shares before deleting your account.`);
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
 
     try {
@@ -476,6 +484,7 @@ function App() {
             <button onClick={() => setActiveTab("dashboard")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "dashboard" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Dashboard</button>
             <button onClick={() => setActiveTab("market")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "market" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Marketplace</button>
             <button onClick={() => setActiveTab("history")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "history" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>History</button>
+            <button onClick={() => setActiveTab("faq")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "faq" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>FAQ</button>
           </div>
 
           {activeTab === "market" && (
@@ -518,7 +527,10 @@ function App() {
                         className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm relative overflow-hidden cursor-pointer transform hover:scale-[1.02] duration-200">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="text-xl font-bold dark:text-white">{code}</h3>
+                            <div className="flex items-center gap-2">
+                              {stockData.logo && <img src={stockData.logo} alt={code} className="w-6 h-6 rounded-full object-contain bg-white" />}
+                              <h3 className="text-xl font-bold dark:text-white">{code}</h3>
+                            </div>
                             <p className="text-gray-500 text-xs">{stockData.name}</p>
                           </div>
                           <span className="bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs font-bold">
@@ -563,7 +575,10 @@ function App() {
                         className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm opacity-90 hover:opacity-100 transition-opacity cursor-pointer transform hover:scale-[1.02] duration-200 relative">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="text-lg font-bold dark:text-white">{code}</h3>
+                            <div className="flex items-center gap-2">
+                              {stockData.logo && <img src={stockData.logo} alt={code} className="w-6 h-6 rounded-full object-contain bg-white" />}
+                              <h3 className="text-lg font-bold dark:text-white">{code}</h3>
+                            </div>
                             <p className="text-gray-500 text-xs">{stockData.name}</p>
                           </div>
                           <button onClick={(e) => { e.stopPropagation(); toggleSubscription(code); }} className="text-gray-400 hover:text-red-500 z-10 p-1">
@@ -595,7 +610,10 @@ function App() {
                 <div key={stock.code} className="bg-white dark:bg-gray-800 p-6 rounded-xl border dark:border-gray-700 flex flex-col justify-between">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-bold dark:text-white">{stock.code}</h3>
+                      <div className="flex items-center gap-2">
+                        {stock.logo && <img src={stock.logo} alt={stock.code} className="w-8 h-8 rounded-full object-contain bg-white border border-gray-100" />}
+                        <h3 className="text-xl font-bold dark:text-white">{stock.code}</h3>
+                      </div>
                       <p className="text-gray-500 text-sm">{stock.name}</p>
                     </div>
                     <span className="text-[10px] uppercase font-bold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
@@ -663,6 +681,9 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* FAQ VIEW */}
+        {activeTab === "faq" && <FAQ />}
 
         {/* MODALS */}
         <EscrowModal isOpen={isDepositModalOpen} onClose={() => setIsDepositModalOpen(false)} onComplete={handleDeposit} mode="DEPOSIT" />
