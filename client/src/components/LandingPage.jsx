@@ -200,10 +200,10 @@ function LandingPage({ onEnter, darkMode, toggleTheme }) {
 
                                         {/* Social Links */}
                                         <div className="flex justify-center gap-4">
-                                            <a href="https://github.com/vijaynetekal" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-900 text-white rounded-full hover:scale-110 transition-transform">
+                                            <a href="https://github.com/the-lost-phoenix" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-900 text-white rounded-full hover:scale-110 transition-transform">
                                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.03.66-3.84-1.47-3.84-1.47-.54-1.38-1.335-1.755-1.335-1.755-.99-.675.075-.66.075-.66 1.095.075 1.665 1.125 1.665 1.125.975 1.665 2.565 1.185 3.195.9.105-.705.375-1.185.69-1.455-2.43-.27-4.995-1.215-4.995-5.4 0-1.185.42-2.16 1.11-2.91-.105-.285-.495-1.38.105-2.88 0 0 .915-.285 3 .96 1.8-.495 3.555-.495 3.555-.285 24 0 .915 24 2.13 24 3.795 24 5.25.975 8.205 2.91 9.795 24 5.31 24 12 24 0 5.37-5.37 12-12 12z" /></svg>
                                             </a>
-                                            <a href="https://www.linkedin.com/in/vijay-netekal/" target="_blank" rel="noopener noreferrer" className="p-2 bg-[#0077b5] text-white rounded-full hover:scale-110 transition-transform">
+                                            <a href="https://www.linkedin.com/in/vijay-netekal-a603b2280/" target="_blank" rel="noopener noreferrer" className="p-2 bg-[#0077b5] text-white rounded-full hover:scale-110 transition-transform">
                                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
                                             </a>
                                             <a href="mailto:vijaynetekal28@gmail.com" className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
