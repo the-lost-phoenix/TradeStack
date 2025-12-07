@@ -9,6 +9,7 @@ import StockChart from "./components/StockChart";
 import ProfileModal from "./components/ProfileModal";
 import StockDetailsModal from "./components/StockDetailsModal";
 import FAQ from "./components/FAQ";
+import LoadingAnimation from "./components/LoadingAnimation";
 
 // Helper Component for Notifications (Inline for simplicity)
 const Toast = ({ message, type, onClose }) => {
@@ -409,6 +410,11 @@ function App() {
         </div>
       </div>
     );
+  }
+
+
+  if (!isClerkLoaded || (isSignedIn && !user && !requiresSignup)) {
+    return <LoadingAnimation />;
   }
 
   if (showLanding) return <LandingPage onEnter={() => setShowLanding(false)} onGuestLogin={handleGuestLogin} darkMode={darkMode} toggleTheme={toggleTheme} />;
