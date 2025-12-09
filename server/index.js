@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import User from './models/User.js';
 import { INITIAL_STOCKS } from './data/stockData.js'; // <--- 1. IMPORT DATA
+import { generateNews } from './services/newsService.js'; // Import News Service
 
 dotenv.config();
 
@@ -25,12 +26,25 @@ const io = new Server(server, {
 // --- MARKET SIMULATION ---
 // 2. Use the imported list as our memory
 let stocks = [...INITIAL_STOCKS];
+let newsList = []; // Store recent news
+let marketSentiment = {}; // { "TSLA": 0.05, "AAPL": -0.02 } -> Decay over time
 
 function updatePrices() {
     stocks = stocks.map(stock => {
         // More volatile logic for 100 stocks to make it look "alive"
         const volatility = 0.02; // 2% up or down
-        const changePercent = (Math.random() * volatility * 2) - volatility;
+        let changePercent = (Math.random() * volatility * 2) - volatility;
+
+        // Apply AI Sentiment Impact
+        const sentimentImpact = marketSentiment[stock.code] || 0;
+        changePercent += sentimentImpact; // Add bias
+
+        // Decay the sentiment impact (it fades over time)
+        if (marketSentiment[stock.code]) {
+            marketSentiment[stock.code] *= 0.95; // Fades by 5% every second
+            if (Math.abs(marketSentiment[stock.code]) < 0.001) delete marketSentiment[stock.code];
+        }
+
         const newPrice = Math.max(0.01, stock.price * (1 + changePercent)); // Never go below 0.01
 
         return {
@@ -46,6 +60,19 @@ setInterval(() => {
     io.emit("stock_update", stocks);
 }, 1000);
 
+// News Generation Loop (Every 15 seconds)
+setInterval(() => {
+    const newsItem = generateNews();
+    newsList.unshift(newsItem); // Add to top
+    if (newsList.length > 20) newsList.pop(); // Keep last 20
+
+    // Apply sentiment
+    marketSentiment[newsItem.stockCode] = newsItem.score;
+
+    io.emit("news_update", newsItem);
+}, 15000);
+
+
 
 // --- API ROUTES ---
 
@@ -58,6 +85,10 @@ function generateIBAN() {
 // 3. NEW ROUTE: Get All Available Stocks (For the Marketplace)
 app.get("/api/stocks", (req, res) => {
     res.json(stocks); // Send the full list of 100 companies
+});
+
+app.get("/api/news", (req, res) => {
+    res.json(newsList);
 });
 
 // ... (Previous imports and setup remain the same) ...

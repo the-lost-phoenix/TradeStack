@@ -10,6 +10,7 @@ import ProfileModal from "./components/ProfileModal";
 import StockDetailsModal from "./components/StockDetailsModal";
 import FAQ from "./components/FAQ";
 import LoadingAnimation from "./components/LoadingAnimation";
+import NewsFeed from "./components/NewsFeed"; // <--- IMPORT NEWS FEED
 
 // Helper Component for Notifications (Inline for simplicity)
 const Toast = ({ message, type, onClose }) => {
@@ -54,6 +55,8 @@ function App() {
   const [tradeModal, setTradeModal] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStock, setSelectedStock] = useState(null);
+
+  const [newsList, setNewsList] = useState([]); // <--- NEWS STATE
 
   // --- CLERK USER SYNC ---
   const [syncError, setSyncError] = useState(false);
@@ -118,6 +121,12 @@ function App() {
       .then(res => res.json())
       .then(data => setAvailableStocks(data))
       .catch(console.error);
+
+    // Fetch Initial News
+    fetch(`${API_URL}/api/news`)
+      .then(res => res.json())
+      .then(data => setNewsList(data))
+      .catch(console.error);
   }, []);
 
   // --- SOCKET CONNECTION ---
@@ -133,9 +142,21 @@ function App() {
           next[s.code] = [...next[s.code], { price: s.price }].slice(-20);
         });
         return next;
+        return next;
       });
     });
-    return () => { socket.off("connect"); socket.off("disconnect"); socket.off("stock_update"); };
+
+    socket.on("news_update", (newItem) => {
+      setNewsList((prev) => [newItem, ...prev].slice(0, 50)); // Keep last 50
+      showToast("New Market Insight Available", "info");
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("stock_update");
+      socket.off("news_update");
+    };
   }, []);
 
   // --- HELPERS ---
@@ -486,11 +507,11 @@ function App() {
 
         {/* NAVIGATION TABS */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
-          <div className="flex bg-white dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
-            <button onClick={() => setActiveTab("dashboard")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "dashboard" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Dashboard</button>
-            <button onClick={() => setActiveTab("market")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "market" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Marketplace</button>
-            <button onClick={() => setActiveTab("history")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "history" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>History</button>
-            <button onClick={() => setActiveTab("faq")} className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "faq" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>FAQ</button>
+          <div className="flex bg-white dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700 w-full overflow-x-auto no-scrollbar">
+            <button onClick={() => setActiveTab("dashboard")} className={`whitespace-nowrap flex-shrink-0 px-4 md:px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "dashboard" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Dashboard</button>
+            <button onClick={() => setActiveTab("market")} className={`whitespace-nowrap flex-shrink-0 px-4 md:px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "market" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>Marketplace</button>
+            <button onClick={() => setActiveTab("history")} className={`whitespace-nowrap flex-shrink-0 px-4 md:px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "history" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>History</button>
+            <button onClick={() => setActiveTab("faq")} className={`whitespace-nowrap flex-shrink-0 px-4 md:px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === "faq" ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"}`}>FAQ</button>
           </div>
 
           {activeTab === "market" && (
@@ -509,101 +530,111 @@ function App() {
 
         {/* DASHBOARD VIEW */}
         {activeTab === "dashboard" && (
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            {/* 1. MY PORTFOLIO SECTION */}
-            <div>
-              <h2 className="text-xl font-bold dark:text-white mb-4 flex items-center gap-2">
-                <span className="w-2 h-8 bg-blue-500 rounded-full"></span>
-                My Portfolio
-              </h2>
-              {portfolioStocks.length === 0 ? (
-                <div className="text-gray-500 italic p-4 bg-white dark:bg-gray-800 rounded-lg">You don't own any stocks yet.</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {portfolioStocks.map(holding => {
-                    const code = holding.stockCode;
-                    const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading..." };
-                    const history = stockHistory[code] || [];
-                    const isProfit = stockData.price >= (history[0]?.price || stockData.price);
+            {/* LEFT COLUMN: Portfolio & Watchlist (Takes 2/3 width on large screens) */}
+            <div className="lg:col-span-2 space-y-8">
 
-                    return (
-                      <div key={code}
-                        onClick={() => setSelectedStock(stockData)}
-                        className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm relative overflow-hidden cursor-pointer transform hover:scale-[1.02] duration-200">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {stockData.logo && <img src={stockData.logo} alt={code} className="w-6 h-6 rounded-full object-contain bg-white" />}
-                              <h3 className="text-xl font-bold dark:text-white">{code}</h3>
+              {/* 1. MY PORTFOLIO SECTION */}
+              <div>
+                <h2 className="text-xl font-bold dark:text-white mb-4 flex items-center gap-2">
+                  <span className="w-2 h-8 bg-blue-500 rounded-full"></span>
+                  My Portfolio
+                </h2>
+                {portfolioStocks.length === 0 ? (
+                  <div className="text-gray-500 italic p-4 bg-white dark:bg-gray-800 rounded-lg">You don't own any stocks yet.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {portfolioStocks.map(holding => {
+                      const code = holding.stockCode;
+                      const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading..." };
+                      const history = stockHistory[code] || [];
+                      const isProfit = stockData.price >= (history[0]?.price || stockData.price);
+
+                      return (
+                        <div key={code}
+                          onClick={() => setSelectedStock(stockData)}
+                          className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm relative overflow-hidden cursor-pointer transform hover:scale-[1.02] duration-200">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                {stockData.logo && <img src={stockData.logo} alt={code} className="w-6 h-6 rounded-full object-contain bg-white" />}
+                                <h3 className="text-xl font-bold dark:text-white">{code}</h3>
+                              </div>
+                              <p className="text-gray-500 text-xs">{stockData.name}</p>
                             </div>
-                            <p className="text-gray-500 text-xs">{stockData.name}</p>
+                            <span className="bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs font-bold">
+                              Owned: {holding.quantity}
+                            </span>
                           </div>
-                          <span className="bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs font-bold">
-                            Owned: {holding.quantity}
-                          </span>
+                          <div className={`text-3xl font-mono font-bold mb-2 ${isProfit ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                            ${stockData.price.toFixed(2)}
+                          </div>
+                          <div className="h-16 mb-4">
+                            <StockChart data={history} color={isProfit ? "#16a34a" : "#dc2626"} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'BUY' }); }} className="bg-green-100 text-green-700 py-2 rounded font-bold text-sm hover:bg-green-200">BUY</button>
+                            <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'SELL' }); }} className="bg-red-100 text-red-700 py-2 rounded font-bold text-sm hover:bg-red-200">SELL</button>
+                          </div>
                         </div>
-                        <div className={`text-3xl font-mono font-bold mb-2 ${isProfit ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-                          ${stockData.price.toFixed(2)}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. WATCHLIST SECTION */}
+              <div>
+                <h2 className="text-xl font-bold dark:text-white mb-4 flex items-center gap-2">
+                  <span className="w-2 h-8 bg-purple-500 rounded-full"></span>
+                  Watchlist
+                </h2>
+                {watchlistStocks.length === 0 ? (
+                  <div className="text-gray-500 italic p-4 bg-white dark:bg-gray-800 rounded-lg">Your watchlist is empty.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {watchlistStocks.map(code => {
+                      const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading..." };
+                      const history = stockHistory[code] || [];
+                      const isProfit = stockData.price >= (history[0]?.price || stockData.price);
+
+                      return (
+                        <div key={code}
+                          onClick={() => setSelectedStock(stockData)}
+                          className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm opacity-90 hover:opacity-100 transition-opacity cursor-pointer transform hover:scale-[1.02] duration-200 relative">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                {stockData.logo && <img src={stockData.logo} alt={code} className="w-6 h-6 rounded-full object-contain bg-white" />}
+                                <h3 className="text-lg font-bold dark:text-white">{code}</h3>
+                              </div>
+                              <p className="text-gray-500 text-xs">{stockData.name}</p>
+                            </div>
+                            <button onClick={(e) => { e.stopPropagation(); toggleSubscription(code); }} className="text-gray-400 hover:text-red-500 z-10 p-1">
+                              ✕
+                            </button>
+                          </div>
+                          <div className="text-2xl font-mono font-bold mb-4 dark:text-white">
+                            ${stockData.price.toFixed(2)}
+                          </div>
+                          <div className="h-12 mb-4 opacity-50">
+                            <StockChart data={history} color={isProfit ? "#16a34a" : "#dc2626"} />
+                          </div>
+                          <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'BUY' }); }} className="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-500 z-10 relative">Start Investing</button>
                         </div>
-                        <div className="h-16 mb-4">
-                          <StockChart data={history} color={isProfit ? "#16a34a" : "#dc2626"} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'BUY' }); }} className="bg-green-100 text-green-700 py-2 rounded font-bold text-sm hover:bg-green-200">BUY</button>
-                          <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'SELL' }); }} className="bg-red-100 text-red-700 py-2 rounded font-bold text-sm hover:bg-red-200">SELL</button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* 2. WATCHLIST SECTION */}
-            <div>
-              <h2 className="text-xl font-bold dark:text-white mb-4 flex items-center gap-2">
-                <span className="w-2 h-8 bg-purple-500 rounded-full"></span>
-                Watchlist
-              </h2>
-              {watchlistStocks.length === 0 ? (
-                <div className="text-gray-500 italic p-4 bg-white dark:bg-gray-800 rounded-lg">Your watchlist is empty.</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {watchlistStocks.map(code => {
-                    const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading..." };
-                    const history = stockHistory[code] || [];
-                    const isProfit = stockData.price >= (history[0]?.price || stockData.price);
-
-                    return (
-                      <div key={code}
-                        onClick={() => setSelectedStock(stockData)}
-                        className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm opacity-90 hover:opacity-100 transition-opacity cursor-pointer transform hover:scale-[1.02] duration-200 relative">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {stockData.logo && <img src={stockData.logo} alt={code} className="w-6 h-6 rounded-full object-contain bg-white" />}
-                              <h3 className="text-lg font-bold dark:text-white">{code}</h3>
-                            </div>
-                            <p className="text-gray-500 text-xs">{stockData.name}</p>
-                          </div>
-                          <button onClick={(e) => { e.stopPropagation(); toggleSubscription(code); }} className="text-gray-400 hover:text-red-500 z-10 p-1">
-                            ✕
-                          </button>
-                        </div>
-                        <div className="text-2xl font-mono font-bold mb-4 dark:text-white">
-                          ${stockData.price.toFixed(2)}
-                        </div>
-                        <div className="h-12 mb-4 opacity-50">
-                          <StockChart data={history} color={isProfit ? "#16a34a" : "#dc2626"} />
-                        </div>
-                        <button onClick={(e) => { e.stopPropagation(); setTradeModal({ code, type: 'BUY' }); }} className="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-500 z-10 relative">Start Investing</button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            {/* RIGHT COLUMN: AI News Feed (Takes 1/3 width on large screens) */}
+            <div className="lg:col-span-1">
+              <NewsFeed news={newsList} stocks={availableStocks} />
             </div>
+
           </div>
         )}
 
