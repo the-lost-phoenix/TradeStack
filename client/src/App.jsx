@@ -28,7 +28,8 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 // Helper to generate a logo URL
-const getStockLogo = (code, name) => {
+const getStockLogo = (code, logoUrl) => {
+  if (logoUrl) return logoUrl;
   return `https://ui-avatars.com/api/?name=${code}&background=0D8ABC&color=fff&size=128&bold=true`;
 };
 
@@ -560,7 +561,7 @@ function App() {
 
 
 
-        // ... (inside the component)
+
 
         {/* DASHBOARD VIEW */}
         {activeTab === "dashboard" && (
@@ -594,9 +595,9 @@ function App() {
                           <div className="flex justify-between items-start mb-4 relative z-10">
                             <div className="flex items-center gap-4">
                               <img
-                                src={getStockLogo(code, stockData.name)}
+                                src={getStockLogo(code, stockData.logo)}
                                 alt={code}
-                                className="w-12 h-12 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                                className="w-12 h-12 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)] bg-white p-1"
                               />
                               <div>
                                 <h3 className="text-2xl font-orbitron font-bold text-starlight group-hover:text-solar-flare transition-colors">{code}</h3>
@@ -656,9 +657,9 @@ function App() {
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
                               <img
-                                src={getStockLogo(code, stockData.name)}
+                                src={getStockLogo(code, stockData.logo)}
                                 alt={code}
-                                className="w-10 h-10 rounded-full border border-white/10 opacity-80"
+                                className="w-10 h-10 rounded-full border border-white/10 opacity-80 bg-white p-0.5"
                               />
                               <div>
                                 <h3 className="text-lg font-orbitron font-bold text-starlight/80 group-hover:text-solar-flare transition-colors">{code}</h3>
@@ -703,9 +704,9 @@ function App() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-4">
                       <img
-                        src={getStockLogo(stock.code, stock.name)}
+                        src={getStockLogo(stock.code, stock.logo)}
                         alt={stock.code}
-                        className="w-12 h-12 rounded-full border border-white/10 bg-black/50"
+                        className="w-12 h-12 rounded-full border border-white/10 bg-white p-1"
                       />
                       <div>
                         <h3 className="text-2xl font-orbitron font-bold text-starlight">{stock.code}</h3>
