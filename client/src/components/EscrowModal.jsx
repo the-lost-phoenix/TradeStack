@@ -7,15 +7,15 @@ function EscrowModal({ isOpen, onClose, onComplete, mode = "DEPOSIT" }) {
     const isDeposit = mode === "DEPOSIT";
 
     const steps = isDeposit ? [
-        "Initiating Secure Handshake...",
-        "Verifying Virtual IBAN...",
-        "Routing Funds via Escrow Stack...",
-        "Settlement Complete."
+        "INITIALIZING SECURE HANDSHAKE...",
+        "VERIFYING VIRTUAL IBAN SEQUENCE...",
+        "ROUTING QUANTUM FUNDS...",
+        "SETTLEMENT CONFIRMED."
     ] : [
-        "Verifying Wallet Balance...",
-        "Initiating Bank Transfer...",
-        "Processing Withdrawal...",
-        "Funds Transferred."
+        "SCANNING WALLET SIGNATURE...",
+        "ESTABLISHING BANK LINK...",
+        "EXECUTING WITHDRAWAL PROTOCOL...",
+        "ASSETS TRANSFERRED."
     ];
 
     // Reset when opening
@@ -49,68 +49,79 @@ function EscrowModal({ isOpen, onClose, onComplete, mode = "DEPOSIT" }) {
     const isBelowMinDeposit = isDeposit && (!amount || parseFloat(amount) < 1000);
 
     return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className={`bg-gray-800 p-8 rounded-2xl border ${isDeposit ? 'border-blue-500' : 'border-red-500'} shadow-2xl w-full max-w-md text-center relative`}>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 backdrop-blur-md">
+            <div className={`bg-deep-space p-8 border ${isDeposit ? 'border-nebula-blue/50 shadow-[0_0_50px_rgba(20,33,61,0.5)]' : 'border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.3)]'} w-full max-w-md text-center relative overflow-hidden`} style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%)' }}>
 
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
+                {/* Decorative Scan Line */}
+                <div className={`absolute top-0 left-0 w-full h-1 ${isDeposit ? 'bg-gradient-to-r from-transparent via-nebula-blue to-transparent' : 'bg-gradient-to-r from-transparent via-red-500 to-transparent'} animate-pulse`}></div>
+
+                <button onClick={onClose} className="absolute top-4 right-4 text-starlight/50 hover:text-white transition-colors font-bold">✕</button>
 
                 {step === 0 && (
                     <form onSubmit={startProcess}>
-                        <h2 className="text-2xl font-bold text-white mb-2">{isDeposit ? "Deposit Funds" : "Withdraw Funds"}</h2>
-                        <p className="text-gray-400 text-sm mb-6">
-                            {isDeposit ? "Enter amount to transfer via Virtual IBAN." : "Enter amount to withdraw to your bank."}
+                        <h2 className="text-2xl font-black font-orbitron text-starlight mb-2 uppercase tracking-widest">{isDeposit ? "Inject Funds" : "Extract Assets"}</h2>
+                        <p className="text-starlight/50 text-xs font-rajdhani mb-8 uppercase tracking-wider">
+                            {isDeposit ? "Enter credit quantum for injection." : "Enter value for external extraction."}
                         </p>
 
-                        <input
-                            type="number"
-                            autoFocus
-                            className={`w-full bg-gray-900 border ${isDeposit ? 'border-gray-600 focus:border-blue-500' : 'border-gray-600 focus:border-red-500'} rounded-lg p-4 text-2xl font-mono text-white text-center mb-6 outline-none`}
-                            placeholder="$0.00"
-                            value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                            step="0.01"
-                            min="0.01"
-                            required
-                        />
+                        <div className="relative mb-8">
+                            <input
+                                type="number"
+                                autoFocus
+                                className={`w-full bg-space-black border border-white/10 p-4 text-3xl font-orbitron text-white text-center outline-none transition-all placeholder-white/5 focus:border-opacity-100 ${isDeposit ? 'focus:border-nebula-blue shadow-[0_0_20px_rgba(20,33,61,0.2)]' : 'focus:border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]'}`}
+                                placeholder="0.00"
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                step="0.01"
+                                min="0.01"
+                                required
+                            />
+                            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/50"></div>
+                            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/50"></div>
+                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/50"></div>
+                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/50"></div>
+                        </div>
 
                         <button
                             type="submit"
                             disabled={isBelowMinDeposit}
-                            className={`w-full font-bold py-3 rounded-lg transition-all ${isBelowMinDeposit
-                                ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                                : isDeposit ? "bg-blue-600 hover:bg-blue-500 text-white" : "bg-red-600 hover:bg-red-500 text-white"
+                            className={`w-full font-bold py-4 transition-all uppercase tracking-widest font-orbitron text-sm clip-path-polygon ${isBelowMinDeposit
+                                ? "bg-white/5 text-starlight/20 cursor-not-allowed border border-white/5"
+                                : isDeposit ? "bg-nebula-blue hover:bg-white hover:text-deep-space text-white shadow-[0_0_20px_rgba(20,33,61,0.4)]" : "bg-red-600 hover:bg-white hover:text-red-900 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]"
                                 }`}
+                            style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 100%, 0 100%, 0 20%)' }}
                         >
-                            {isBelowMinDeposit ? "Minimum Deposit $1,000" : isDeposit ? "Initiate Transfer" : "Confirm Withdrawal"}
+                            {isBelowMinDeposit ? "MINIMUM INJECTION $1,000" : isDeposit ? "INITIATE TRANSFER" : "CONFIRM WITHDRAWAL"}
                         </button>
                     </form>
                 )}
 
                 {step > 0 && (
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-6">Processing Transaction</h2>
-                        <div className={`text-3xl font-mono font-bold ${isDeposit ? 'text-green-400' : 'text-red-400'} mb-6`}>
+                    <div className="py-4">
+                        <h2 className="text-xl font-bold font-orbitron text-starlight mb-8 animate-pulse">PROCESSING SEQUENCE</h2>
+
+                        <div className={`text-4xl font-mono font-bold ${isDeposit ? 'text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]' : 'text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.5)]'} mb-8`}>
                             {isDeposit ? '+' : '-'}${parseFloat(amount).toLocaleString()}
                         </div>
 
-                        <div className="w-full bg-gray-700 h-2 rounded-full mb-8 overflow-hidden">
+                        <div className="w-full bg-space-black h-1 mb-8 relative overflow-hidden">
                             <div
-                                className={`h-full ${isDeposit ? 'bg-blue-500' : 'bg-red-500'} transition-all duration-500 ease-out`}
+                                className={`h-full absolute top-0 left-0 ${isDeposit ? 'bg-nebula-blue shadow-[0_0_15px_#14213d]' : 'bg-red-500 shadow-[0_0_15px_#ef4444]'} transition-all duration-500 ease-out`}
                                 style={{ width: `${((step - 1) / 3) * 100}%` }}
                             ></div>
                         </div>
 
-                        <div className="space-y-3 text-left">
+                        <div className="space-y-4 text-left pl-4 font-rajdhani">
                             {steps.map((text, index) => (
-                                <div key={index} className={`flex items-center gap-3 transition-opacity duration-500 ${index + 1 > step ? "opacity-20" : "opacity-100"}`}>
+                                <div key={index} className={`flex items-center gap-4 transition-all duration-500 ${index + 1 > step ? "opacity-20 blur-[1px]" : "opacity-100"}`}>
                                     {index + 1 < step ? (
-                                        <span className={`font-bold ${isDeposit ? 'text-green-500' : 'text-red-500'}`}>✓</span>
+                                        <span className={`font-bold ${isDeposit ? 'text-green-400' : 'text-red-400'}`}>[ OK ]</span>
                                     ) : index + 1 === step ? (
-                                        <span className={`animate-spin h-4 w-4 border-2 ${isDeposit ? 'border-blue-500' : 'border-red-500'} border-t-transparent rounded-full`}></span>
+                                        <span className={`animate-pulse font-bold ${isDeposit ? 'text-nebula-blue' : 'text-red-500'}`}>[ &gt;&gt; ]</span>
                                     ) : (
-                                        <span className="h-4 w-4 rounded-full border border-gray-600"></span>
+                                        <span className="font-bold text-starlight/20">[ .. ]</span>
                                     )}
-                                    <span className={index + 1 === step ? (isDeposit ? "text-blue-400 font-bold" : "text-red-400 font-bold") : "text-gray-400"}>
+                                    <span className={`uppercase tracking-wider text-xs font-bold ${index + 1 === step ? "text-white glow-text" : "text-starlight/60"}`}>
                                         {text}
                                     </span>
                                 </div>

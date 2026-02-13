@@ -58,65 +58,79 @@ function StockDetailsModal({ stock, isOpen, onClose }) {
             type: 'candlestick',
             height: 350,
             background: 'transparent',
-            toolbar: { show: false }
+            toolbar: { show: false },
+            fontFamily: 'Rajdhani, sans-serif'
         },
         title: {
-            text: 'Price Movement (Last 30 Days)',
+            text: 'PRICE HISTORY [30D]',
             align: 'left',
-            style: { color: '#888' }
+            style: { color: '#ffffff50', fontSize: '12px', fontFamily: 'Orbitron', letterSpacing: '2px' }
         },
         xaxis: {
             type: 'datetime',
-            labels: { style: { colors: '#888' } }
+            labels: { style: { colors: '#ffffff50', fontFamily: 'Rajdhani' } },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
         },
         yaxis: {
             tooltip: { enabled: true },
-            labels: { style: { colors: '#888' } }
+            labels: { style: { colors: '#ffffff50', fontFamily: 'Rajdhani' } }
         },
-        theme: { mode: 'dark' }, // Auto-match dark mode if possible, but hardcoding dark for contrast or use logic
+        theme: { mode: 'dark', palette: 'palette1' },
         plotOptions: {
             candlestick: {
                 colors: {
-                    upward: '#16a34a',
-                    downward: '#dc2626'
-                }
+                    upward: '#4ade80',
+                    downward: '#ef4444'
+                },
+                wick: { useFillColor: true }
             }
         },
         grid: {
-            borderColor: '#333'
+            borderColor: '#ffffff10',
+            strokeDashArray: 2
+        },
+        tooltip: {
+            theme: 'dark',
+            style: { fontFamily: 'Rajdhani' },
+            x: { format: 'dd MMM HH:mm' }
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col md:flex-row">
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 backdrop-blur-md p-4 animate-fade-in">
+            <div className="bg-deep-space rounded-none w-full max-w-5xl max-h-[90vh] overflow-y-auto border border-white/10 shadow-[0_0_50px_rgba(20,33,61,0.5)] flex flex-col md:flex-row clip-path-polygon" style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%)' }}>
+
+                {/* Decorative border line */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-solar-flare to-transparent opacity-50"></div>
 
                 {/* LEFT: Charts */}
-                <div className="p-6 md:w-2/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
+                <div className="p-8 md:w-3/4 border-b md:border-b-0 md:border-r border-white/5 bg-space-black/50">
                     <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h2 className="text-3xl font-extrabold dark:text-white flex items-center gap-3">
+                            <h2 className="text-4xl font-black font-orbitron text-starlight flex items-center gap-3 uppercase tracking-wider">
                                 {stock.code}
-                                <span className="text-sm font-normal bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-500">{stock.category}</span>
+                                <span className="text-xs font-bold border border-white/20 px-2 py-1 text-starlight/50 font-rajdhani">{stock.category}</span>
                             </h2>
-                            <p className="text-gray-500 dark:text-gray-400 font-medium">{stock.name}</p>
+                            <p className="text-starlight/40 font-rajdhani uppercase tracking-widest text-sm mt-1">{stock.name}</p>
                         </div>
                         <div className="text-right">
-                            <p className="text-3xl font-mono font-bold dark:text-white">${stock.price.toFixed(2)}</p>
-                            <span className="text-green-500 text-sm font-bold">+2.4% (Today)</span>
+                            <p className="text-4xl font-mono font-bold text-starlight tracking-tighter drop-shadow-lg">${stock.price.toFixed(2)}</p>
+                            <span className="text-green-400 text-sm font-bold font-rajdhani tracking-wider">+2.4% (CYCLE)</span>
                         </div>
                     </div>
 
-                    <div className="h-80 w-full bg-gray-50 dark:bg-gray-700/30 rounded-xl p-2">
+                    <div className="h-96 w-full bg-deep-space/30 border border-white/5 p-4 relative backdrop-blur-sm">
+                        <div className="absolute top-0 right-0 p-2 text-[10px] text-white/20 font-mono">LIVE FEED CONNECTED</div>
                         <Chart options={options} series={series} type="candlestick" height="100%" />
                     </div>
                 </div>
 
                 {/* RIGHT: Details */}
-                <div className="p-6 md:w-1/3 flex flex-col">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold dark:text-white">Market Stats</h3>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <div className="p-8 md:w-1/4 flex flex-col bg-deep-space">
+                    <div className="flex justify-between items-center mb-10">
+                        <h3 className="text-sm font-bold font-orbitron text-starlight uppercase tracking-widest border-l-2 border-solar-flare pl-3">Asset Data</h3>
+                        <button onClick={onClose} className="text-starlight/30 hover:text-white transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -124,22 +138,22 @@ function StockDetailsModal({ stock, isOpen, onClose }) {
                     </div>
 
                     <div className="space-y-6 flex-1">
-                        <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
-                            <p className="text-sm text-gray-500 mb-1">Market Cap</p>
-                            <p className="text-xl font-bold dark:text-gray-200">{stock.marketCap || "N/A"}</p>
+                        <div className="bg-white/5 p-4 border border-white/5 hover:border-solar-flare/30 transition-all group">
+                            <p className="text-[10px] uppercase font-bold text-starlight/40 tracking-widest font-rajdhani mb-1">Market Cap</p>
+                            <p className="text-xl font-bold font-orbitron text-starlight group-hover:text-solar-flare transition-colors">{stock.marketCap || "N/A"}</p>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
-                            <p className="text-sm text-gray-500 mb-1">Net Profit (TTM)</p>
-                            <p className="text-xl font-bold dark:text-gray-200">{stock.netProfit || "N/A"}</p>
+                        <div className="bg-white/5 p-4 border border-white/5 hover:border-green-500/30 transition-all group">
+                            <p className="text-[10px] uppercase font-bold text-starlight/40 tracking-widest font-rajdhani mb-1">Net Yield (TTM)</p>
+                            <p className="text-xl font-bold font-orbitron text-starlight group-hover:text-green-400 transition-colors">{stock.netProfit || "N/A"}</p>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
-                            <p className="text-sm text-gray-500 mb-1">P/E Ratio</p>
-                            <p className="text-xl font-bold dark:text-gray-200">{stock.peRatio || "N/A"}</p>
+                        <div className="bg-white/5 p-4 border border-white/5 hover:border-blue-500/30 transition-all group">
+                            <p className="text-[10px] uppercase font-bold text-starlight/40 tracking-widest font-rajdhani mb-1">P/E Ratio</p>
+                            <p className="text-xl font-bold font-orbitron text-starlight group-hover:text-blue-400 transition-colors">{stock.peRatio || "N/A"}</p>
                         </div>
                     </div>
 
-                    <button onClick={onClose} className="mt-6 w-full py-3 bg-gray-200 dark:bg-gray-700 font-bold rounded-xl text-gray-700 dark:text-white hover:opacity-80 transition-opacity">
-                        Close View
+                    <button onClick={onClose} className="mt-8 w-full py-4 border border-white/10 text-starlight/60 font-bold uppercase tracking-widest text-xs font-orbitron hover:bg-white hover:text-space-black transition-all">
+                        Terminate View
                     </button>
                 </div>
 

@@ -7,17 +7,17 @@ function NewsFeed({ news, stocks }) {
     const getStockInfo = (code) => stocks.find(s => s.code === code);
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border dark:border-gray-700 shadow-sm h-full flex flex-col">
-            <h2 className="text-xl font-bold dark:text-white mb-4 flex items-center gap-2">
-                <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>
-                AI Market Insights
-                <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full uppercase font-extrabold tracking-wider animate-pulse">Live</span>
+        <div className="bg-deep-space/30 rounded-none p-6 border border-white/5 shadow-[0_0_20px_rgba(0,0,0,0.5)] h-full flex flex-col clip-path-polygon" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}>
+            <h2 className="text-xl font-orbitron font-bold text-starlight mb-6 flex items-center gap-3 border-b border-white/5 pb-2">
+                <span className="w-1 h-6 bg-solar-flare shadow-[0_0_10px_#fca311]"></span>
+                Market Intel
+                <span className="text-[10px] bg-solar-flare/10 border border-solar-flare/30 text-solar-flare px-2 py-0.5 font-rajdhani uppercase font-bold tracking-widest animate-pulse ml-auto shadow-[0_0_10px_rgba(252,163,17,0.2)]">Live Feed</span>
             </h2>
 
             <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
                 {news.length === 0 ? (
-                    <div className="text-gray-400 text-center py-8 italic text-sm">
-                        Waiting for market news...
+                    <div className="text-starlight/30 text-center py-8 italic text-xs font-rajdhani uppercase tracking-widest">
+                        Scanning for market data...
                     </div>
                 ) : (
                     news.map((item) => {
@@ -26,35 +26,38 @@ function NewsFeed({ news, stocks }) {
                         const isNegative = item.sentiment === 'Negative';
 
                         return (
-                            <div key={item.id} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700/50 hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
+                            <div key={item.id} className="group p-4 bg-space-black/50 border border-white/5 hover:border-solar-flare/30 transition-all hover:bg-white/5 relative overflow-hidden backdrop-blur-sm">
+                                <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-white/5 to-transparent"></div>
+
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-2">
-                                        {stock?.logo && <img src={stock.logo} alt={item.stockCode} className="w-5 h-5 rounded-full object-contain bg-white" />}
-                                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{item.stockCode}</span>
-                                        <span className="text-[10px] text-gray-400">• {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span className="text-xs font-bold font-orbitron text-solar-flare">{item.stockCode}</span>
+                                        <span className="text-[10px] text-starlight/30 font-mono tracking-tighter">[{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]</span>
                                     </div>
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded border ${isPositive ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' :
-                                            isNegative ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' :
-                                                'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                                    <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-widest border ${isPositive ? 'bg-green-500/10 text-green-400 border-green-500/30' :
+                                        isNegative ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                            'bg-white/5 text-starlight/50 border-white/10'
                                         }`}>
                                         {item.sentiment.toUpperCase()}
                                     </span>
                                 </div>
 
-                                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1 leading-snug">
+                                <h4 className="text-sm font-bold text-starlight/90 mb-2 leading-snug font-rajdhani group-hover:text-white transition-colors">
                                     {item.headline}
                                 </h4>
 
-                                <div className="mt-2 flex items-center gap-2 p-2 rounded bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30">
-                                    <span className="text-lg">🤖</span>
-                                    <p className="text-xs text-indigo-800 dark:text-indigo-300 font-medium">
-                                        {item.summary}
+                                <div className="mt-2 flex items-start gap-2 p-3 bg-deep-space/50 border border-white/5">
+                                    <span className="text-lg opacity-50">📡</span>
+                                    <div>
+                                        <p className="text-xs text-starlight/70 font-rajdhani leading-relaxed">
+                                            {item.summary}
+                                        </p>
                                         {item.score !== 0 && (
-                                            <span className={`ml-1 font-bold ${item.score > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                (Predicted Impact: {item.score > 0 ? '+' : ''}{(item.score * 100).toFixed(1)}%)
-                                            </span>
+                                            <p className={`mt-1 text-[10px] font-mono ${item.score > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                IMPCT: {item.score > 0 ? '+' : ''}{(item.score * 100).toFixed(1)}%
+                                            </p>
                                         )}
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
                         );

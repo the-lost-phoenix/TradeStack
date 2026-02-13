@@ -3,9 +3,34 @@
 @tailwind utilities;
 
 body {
-  background-color: #111827;
-  color: white;
-  font-family: 'Outfit', sans-serif;
+  background-color: #050505;
+  color: #e5e5e5;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0e17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #fca311;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e59400;
+}
+
+/* Selection */
+::selection {
+  background: #fca311;
+  color: #000;
 }
 
 @layer utilities {
@@ -48,4 +73,20 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
 }
