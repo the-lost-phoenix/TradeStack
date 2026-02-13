@@ -27,6 +27,11 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
+// Helper to generate a logo URL
+const getStockLogo = (code, name) => {
+  return `https://ui-avatars.com/api/?name=${code}&background=0D8ABC&color=fff&size=128&bold=true`;
+};
+
 function App() {
   // CLERK HOOKS
   const { user: clerkUser, isLoaded: isClerkLoaded, isSignedIn } = useUser();
@@ -553,6 +558,10 @@ function App() {
           )}
         </div>
 
+
+
+        // ... (inside the component)
+
         {/* DASHBOARD VIEW */}
         {activeTab === "dashboard" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -572,7 +581,7 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {portfolioStocks.map(holding => {
                       const code = holding.stockCode;
-                      const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading..." };
+                      const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading...", category: "Unknown" };
                       const history = stockHistory[code] || [];
                       const isProfit = stockData.price >= (history[0]?.price || stockData.price);
 
@@ -582,20 +591,31 @@ function App() {
                           className="group bg-deep-space/40 hover:bg-deep-space/60 p-6 border border-white/5 hover:border-solar-flare/50 shadow-lg relative overflow-hidden cursor-pointer transition-all duration-300 backdrop-blur-sm"
                           style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 10% 100%, 0 90%)' }}>
 
-                          <div className="flex justify-between items-start mb-2 relative z-10">
-                            <div>
-                              <div className="flex items-center gap-2">
+                          <div className="flex justify-between items-start mb-4 relative z-10">
+                            <div className="flex items-center gap-4">
+                              <img
+                                src={getStockLogo(code, stockData.name)}
+                                alt={code}
+                                className="w-12 h-12 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                              />
+                              <div>
                                 <h3 className="text-2xl font-orbitron font-bold text-starlight group-hover:text-solar-flare transition-colors">{code}</h3>
+                                <p className="text-starlight/60 text-xs uppercase font-rajdhani tracking-wider font-bold">{stockData.name}</p>
+                                <span className="text-[10px] text-nebula-blue font-bold uppercase tracking-widest">{stockData.category || "General"}</span>
                               </div>
-                              <p className="text-starlight/40 text-[10px] uppercase font-rajdhani tracking-wider">{stockData.name}</p>
                             </div>
-                            <span className="bg-white/5 border border-white/10 text-nebula-blue font-bold px-2 py-1 text-[10px] font-mono">
-                              QTY: {holding.quantity}
-                            </span>
                           </div>
 
-                          <div className={`text-3xl font-orbitron font-bold mb-2 relative z-10 drop-shadow-md ${isProfit ? "text-green-400" : "text-red-500"}`}>
-                            ${stockData.price.toFixed(2)}
+                          <div className="flex justify-between items-end mb-4 relative z-10">
+                            <div className={`text-3xl font-orbitron font-bold drop-shadow-md ${isProfit ? "text-green-400" : "text-red-500"}`}>
+                              ${stockData.price.toFixed(2)}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-starlight/50 uppercase tracking-widest mb-1">Quantity</p>
+                              <span className="bg-solar-flare/20 border border-solar-flare/50 text-solar-flare font-orbitron font-bold px-3 py-1 text-sm shadow-[0_0_10px_rgba(252,163,17,0.2)]">
+                                {holding.quantity}
+                              </span>
+                            </div>
                           </div>
 
                           <div className="h-16 mb-4 opacity-50 group-hover:opacity-100 transition-opacity">
@@ -624,7 +644,7 @@ function App() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {watchlistStocks.map(code => {
-                      const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading..." };
+                      const stockData = livePrices.find(s => s.code === code) || { price: 0, name: "Loading...", category: "Unknown" };
                       const history = stockHistory[code] || [];
                       const isProfit = stockData.price >= (history[0]?.price || stockData.price);
 
@@ -632,16 +652,25 @@ function App() {
                         <div key={code}
                           onClick={() => setSelectedStock(stockData)}
                           className="group bg-deep-space/20 hover:bg-deep-space/40 p-6 border border-white/5 hover:border-nebula-blue/50 cursor-pointer transition-all duration-300 relative">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h3 className="text-lg font-orbitron font-bold text-starlight/80 group-hover:text-solar-flare transition-colors">{code}</h3>
-                              <p className="text-starlight/30 text-[10px] uppercase font-rajdhani tracking-wider">{stockData.name}</p>
+
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={getStockLogo(code, stockData.name)}
+                                alt={code}
+                                className="w-10 h-10 rounded-full border border-white/10 opacity-80"
+                              />
+                              <div>
+                                <h3 className="text-lg font-orbitron font-bold text-starlight/80 group-hover:text-solar-flare transition-colors">{code}</h3>
+                                <p className="text-starlight/40 text-[10px] uppercase font-rajdhani tracking-wider font-bold">{stockData.name}</p>
+                                <span className="text-[9px] text-nebula-blue uppercase tracking-widest font-bold block mt-0.5">{stockData.category || "General"}</span>
+                              </div>
                             </div>
                             <button onClick={(e) => { e.stopPropagation(); toggleSubscription(code); }} className="text-starlight/20 hover:text-red-500 z-10 p-1 transition-colors">
                               ✕
                             </button>
                           </div>
-                          <div className="text-2xl font-mono font-bold mb-4 text-starlight drop-shadow-sm">
+                          <div className="text-2xl font-mono font-bold mb-4 text-starlight drop-shadow-sm pl-2 border-l-2 border-white/10">
                             ${stockData.price.toFixed(2)}
                           </div>
                           <div className="h-12 mb-4 opacity-30 group-hover:opacity-60 transition-opacity">
@@ -672,13 +701,18 @@ function App() {
               return (
                 <div key={stock.code} className="bg-deep-space/30 p-6 border border-white/5 hover:border-solar-flare/20 flex flex-col justify-between transition-all hover:bg-deep-space/50">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-orbitron font-bold text-starlight">{stock.code}</h3>
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={getStockLogo(stock.code, stock.name)}
+                        alt={stock.code}
+                        className="w-12 h-12 rounded-full border border-white/10 bg-black/50"
+                      />
+                      <div>
+                        <h3 className="text-2xl font-orbitron font-bold text-starlight">{stock.code}</h3>
+                        <p className="text-starlight/50 text-xs font-rajdhani uppercase tracking-wider font-bold">{stock.name}</p>
                       </div>
-                      <p className="text-starlight/40 text-xs font-rajdhani uppercase tracking-wider">{stock.name}</p>
                     </div>
-                    <span className="text-[10px] uppercase font-bold bg-white/5 text-nebula-blue font-rajdhani px-2 py-1 tracking-widest border border-white/5">
+                    <span className="text-[10px] uppercase font-bold bg-nebula-blue/20 text-nebula-blue font-rajdhani px-2 py-1 tracking-widest border border-nebula-blue/30 rounded-sm">
                       {stock.category || "General"}
                     </span>
                   </div>
